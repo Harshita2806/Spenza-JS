@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Business Onboarding</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* General styling */
+        body {
+            background: linear-gradient(to bottom, #000000, #021b21, #000000);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .glassmorphism {
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #main-container {
+            box-shadow:
+                0 0 12px rgba(34, 211, 238, 0.3),
+                0 0 24px rgba(34, 211, 238, 0.2),
+                0 0 36px rgba(34, 211, 238, 0.1);
+        }
+
+        /* 3D Carousel CSS */
+        #onboarding-container { display: none; }
+        #carousel-container { perspective: 1000px; }
+        #carousel {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease-in-out;
+        }
+        .carousel-card {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 80%;
+            max-width: 400px;
+            height: 100%;
+            transform-origin: 50% 50% -1200px;
+            transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Specific card positions */
+        .card-0 {
+            background: linear-gradient(135deg, #22d3ee, #0891b2); /* cyan-400 to cyan-600 */
+            color: white;
+            z-index: 10;
+        }
+        
+        /* --- UPDATED CARD VISIBILITY --- */
+        /* Changed from transparent to an opaque dark background for better readability */
+        .card-1, .card-2, .card-3 {
+            background-color: #1f2937; /* Tailwind gray-800 */
+            border: 1px solid #4b5563; /* Tailwind gray-600 */
+        }
+
+        /* --- NEW TRANSITION LOGIC --- */
+        #form-section, #welcome-section {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            transition: left 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        #main-container.signup-mode #form-section { left: 0; }
+        #main-container.signup-mode #welcome-section { left: 50%; }
+        #main-container.login-mode #form-section { left: 50%; }
+        #main-container.login-mode #welcome-section { left: 0; }
+        #main-container.onboarding-mode { justify-content: center; }
+        #main-container.onboarding-mode #form-section, 
+        #main-container.onboarding-mode #welcome-section { display: none; }
+        
+        /* --- STYLES FOR QUESTIONNAIRE THEME --- */
+        .custom-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2322d3ee' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        .carousel-card input::placeholder {
+            color: #6b7280; /* Tailwind gray-500 */
+            opacity: 1;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center min-h-screen p-4">
+    <div id="main-container" class="relative w-full max-w-4xl min-h-[500px] overflow-hidden rounded-2xl border-1 border-cyan-400 bg-black/40 backdrop-blur-lg signup-mode">
+
+        <div id="form-section" class="flex items-center justify-center p-8">
+            <form id="login-form" class="w-full max-w-sm" style="display: none;">
+                <h2 class="text-3xl font-bold mb-6 text-center">Login</h2>
+                <div class="mb-4">
+                    <label for="login-email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="login-email" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Enter your email" required>
+                </div>
+                <div class="mb-6">
+                    <label for="login-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <input type="password" id="login-password" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="w-full py-2 bg-cyan-400 text-black font-bold rounded-md hover:bg-cyan-300 transition-colors duration-300">Log In</button>
+                <p id="login-message" class="mt-4 text-center text-sm font-medium h-5"></p>
+                <p class="mt-4 text-center text-sm">Don't have an account? <a href="#" id="show-signup" class="text-cyan-400 hover:underline">Sign up</a></p>
+            </form>
+
+            <form id="signup-form" class="w-full max-w-sm">
+                <h2 class="text-3xl font-bold mb-6 text-center">Sign Up</h2>
+                <div class="mb-4">
+                    <label for="signup-name" class="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
+                    <input type="text" id="signup-name" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Enter your full name" required>
+                </div>
+                <div class="mb-4">
+                    <label for="signup-email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="signup-email" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Enter your email" required>
+                </div>
+                <div class="mb-6">
+                    <label for="signup-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <input type="password" id="signup-password" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Min. 8 chars, incl. uppercase, etc." required>
+                    <p id="password-error" class="error-message">Password must be 8+ chars with uppercase, lowercase, and a special character (!@#$%^&*).</p>
+                </div>
+                <button type="submit" class="w-full py-2 bg-cyan-400 text-black font-bold rounded-md hover:bg-cyan-300 transition-colors duration-300">Sign Up</button>
+                <p id="signup-message" class="mt-4 text-center text-sm font-medium h-5"></p>
+                <p class="mt-4 text-center text-sm">Already have an account? <a href="#" id="show-login" class="text-cyan-400 hover:underline">Log in</a></p>
+            </form>
+        </div>
+
+        <div id="onboarding-container" class="flex flex-col items-center justify-center w-full p-8">
+            <h2 class="text-3xl font-bold mb-8 text-center">Let's get you set up!</h2>
+            <div id="carousel-container" class="relative w-full max-w-lg h-[400px]">
+                <div id="carousel" class="absolute w-full h-full left-1/2 -translate-x-1/2">
+                    <div class="carousel-card card-0 active">
+                        <h3 class="text-2xl font-semibold mb-4">Initial Setup</h3>
+                        <div class="space-y-4 w-full">
+                            <div>
+                                <label for="business-name" class="block text-sm font-medium text-gray-300 mb-1">What is the name of your business?</label>
+                                <input type="text" id="business-name" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white" placeholder="e.g., My Little Shop">
+                                <p class="error-message">This field is required.</p>
+                            </div>
+                            <div>
+                                <label for="business-niche" class="block text-sm font-medium text-gray-300 mb-1">What is your business niche/category?</label>
+                                <select id="business-niche" class="custom-select w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white">
+                                    <option value="">Select a category</option>
+                                    <option value="Retail/Small Vendor">Retail/Small Vendor</option>
+                                    <option value="Service-based">Service-based</option>
+                                    <option value="Food & Beverage">Food & Beverage</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <p class="error-message">This field is required.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-card card-1">
+                        <h3 class="text-2xl font-semibold mb-4">Business Background</h3>
+                        <div class="space-y-4 w-full">
+                            <div>
+                                <label for="years-in-business" class="block text-sm font-medium text-gray-300 mb-1">How many years have you been in business?</label>
+                                <input type="number" id="years-in-business" class="w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="e.g., 2" min="0">
+                                <p class="error-message">This field is required.</p>
+                            </div>
+                            <div>
+                                <label for="tracking-method" class="block text-sm font-medium text-gray-300 mb-1">Do you currently track your finances?</label>
+                                <select id="tracking-method" class="custom-select w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                                    <option value="">Select an option</option>
+                                    <option value="Notebook">Yes, I use a notebook</option>
+                                    <option value="Spreadsheet">Yes, I use a spreadsheet</option>
+                                    <option value="None">No, I don't track them</option>
+                                </select>
+                                <p class="error-message">This field is required.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-card card-2">
+                         <h3 class="text-2xl font-semibold mb-4">Financial Overview</h3>
+                         <div class="space-y-4 w-full">
+                            <div>
+                                <label for="monthly-income" class="block text-sm font-medium text-gray-300 mb-1">Average monthly income/revenue?</label>
+                                <select id="monthly-income" class="custom-select w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                                    <option value="">Select a range</option>
+                                    <option value="Less than $500">Less than $500</option>
+                                    <option value="$500 - $2,000">$500 - $2,000</option>
+                                    <option value="More than $2,000">More than $2,000</option>
+                                </select>
+                                <p class="error-message">This field is required.</p>
+                            </div>
+                            <div>
+                                <label for="monthly-expense" class="block text-sm font-medium text-gray-300 mb-1">Average monthly expense?</label>
+                                <select id="monthly-expense" class="custom-select w-full px-4 py-2 rounded-md bg-gray-900/70 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                                    <option value="">Select a range</option>
+                                    <option value="Less than $200">Less than $200</option>
+                                    <option value="$200 - $1,000">$200 - $1,000</option>
+                                    <option value="More than $1,000">More than $1,000</option>
+                                </select>
+                                <p class="error-message">This field is required.</p>
+                            </div>
+                         </div>
+                    </div>
+                    <div class="carousel-card card-3">
+                         <h3 class="text-2xl font-semibold mb-4">Review & Finish</h3>
+                         <div id="summary-content" class="text-left w-full max-w-xs space-y-2 mb-6"></div>
+                         <div class="flex space-x-4 w-full">
+                            <button id="clear-data-btn" class="flex-1 py-2 bg-red-600 rounded-md hover:bg-red-500 transition-colors duration-300">Clear Data</button>
+                            <button id="finish-btn" class="flex-1 py-2 bg-cyan-400 text-black font-bold rounded-md hover:bg-cyan-300 transition-colors duration-300">Finish</button>
+                         </div>
+               
+
+                        <div id="in-card-success-message"
+                            class="hidden mt-8 text-green-400 text-2xl font-bold flex flex-col items-center justify-center p-6 rounded-lg bg-green-900/30 border border-green-700/50 transform scale-95 opacity-0 transition-all duration-500 ease-out">
+                        
+                            <!-- Success Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-3 text-green-300" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        
+                            <!-- Success Text -->
+                            <span class="text-center mb-6">Onboarding Complete!</span>
+                        
+                            <!-- Button -->
+                            <a href="2_LandingPg.html"
+                                class="bg-cyan-400 text-black px-6 py-2 rounded-lg text-lg font-semibold hover:bg-cyan-300 transition-all shadow-md">
+                                Get Started
+                            </a>
+                        </div>
+
+
+                        
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-center mt-8 space-y-4">
+                <div class="flex space-x-4">
+                    <button id="prev-btn" class="bg-gray-700 p-3 rounded-full hover:bg-gray-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button id="next-btn" class="bg-cyan-400 p-3 rounded-full hover:bg-cyan-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+                <button id="back-to-signup" class="text-sm text-gray-400 hover:text-cyan-400 transition-colors">
+                    Back to Sign Up
+                </button>
+            </div>
+        </div>
+        
+        <div id="welcome-section" class="flex flex-col items-center justify-center p-8 bg-gradient-to-tr from-cyan-500 to-blue-900 text-center">
+            <h2 id="welcome-title" class="text-4xl font-bold mb-4">CREATE ACCOUNT</h2>
+            <p id="welcome-text" class="text-sm font-light leading-relaxed max-w-xs opacity-80">
+                "Ready to start? Create your Spenza account to unlock powerful financial tools designed for your business. Let's build something great together."
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- NEW JAVASCRIPT LOGIC ADDED BELOW ---
+
+        // Simple in-memory object to act as a user database
+        let userDatabase = {};
+
+        const mainContainer = document.getElementById('main-container');
+        const onboardingContainer = document.getElementById('onboarding-container');
+        const welcomeTitle = document.getElementById('welcome-title');
+        const welcomeText = document.getElementById('welcome-text');
+        const inCardSuccessMessage = document.getElementById('in-card-success-message'); 
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const showSignupLink = document.getElementById('show-signup');
+        const showLoginLink = document.getElementById('show-login');
+
+        const passwordError = document.getElementById('password-error');
+        const loginMessage = document.getElementById('login-message');
+        const signupMessage = document.getElementById('signup-message');
+
+        const carousel = document.getElementById('carousel');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const cards = document.querySelectorAll('.carousel-card');
+        const summaryContent = document.getElementById('summary-content');
+        const clearDataBtn = document.getElementById('clear-data-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const backToSignupBtn = document.getElementById('back-to-signup');
+        let currentCardIndex = 0;
+        const totalCards = cards.length;
+        const businessData = {};
+
+        // --- NEW: Function to validate password strength ---
+        const validatePassword = (password) => {
+            // Regex: At least 8 chars, 1 uppercase, 1 lowercase, 1 special character
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/;
+            return strongPasswordRegex.test(password);
+        };
+
+        const validateCard = () => {
+            let isValid = true;
+            const currentCard = cards[currentCardIndex];
+            const inputs = currentCard.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                const errorMsg = input.closest('div').querySelector('.error-message');
+                if (!input.value.trim()) {
+                    if (errorMsg) errorMsg.style.display = 'block';
+                    isValid = false;
+                } else {
+                    if (errorMsg) errorMsg.style.display = 'none';
+                }
+            });
+            return isValid;
+        };
+        const updateCarousel = () => {
+            cards.forEach((card, index) => {
+                card.classList.remove('active', 'next', 'prev');
+                card.style.zIndex = 0;
+                let transform = 'translateX(-50%) scale(0.8)';
+                let opacity = '0.5';
+                if (index === currentCardIndex) {
+                    card.classList.add('active');
+                    transform = 'translateX(-50%) translateZ(0px)';
+                    opacity = '1';
+                    card.style.zIndex = 10;
+                } else if (index === (currentCardIndex + 1) % totalCards) {
+                    card.classList.add('next');
+                    transform = 'translateX(-50%) rotateY(45deg) translateZ(-500px) scale(0.9)';
+                    opacity = '0.7';
+                } else if (index === (currentCardIndex - 1 + totalCards) % totalCards) {
+                    card.classList.add('prev');
+                    transform = 'translateX(-50%) rotateY(-45deg) translateZ(-500px) scale(0.9)';
+                    opacity = '0.7';
+                }
+                card.style.transform = transform;
+                card.style.opacity = opacity;
+            });
+            prevBtn.style.visibility = currentCardIndex === 0 ? 'hidden' : 'visible';
+        };
+        const collectData = () => {
+            if (currentCardIndex === 0) {
+                businessData.name = document.getElementById('business-name').value;
+                businessData.niche = document.getElementById('business-niche').value;
+            } else if (currentCardIndex === 1) {
+                businessData.years = document.getElementById('years-in-business').value;
+                businessData.tracking = document.getElementById('tracking-method').value;
+            } else if (currentCardIndex === 2) {
+                businessData.income = document.getElementById('monthly-income').value;
+                businessData.expense = document.getElementById('monthly-expense').value;
+            }
+        };
+        const showSummary = () => {
+            summaryContent.innerHTML = '';
+            for (const key in businessData) {
+                const p = document.createElement('p');
+                p.classList.add('text-lg');
+                p.innerHTML = `<span class="font-bold capitalize">${key}:</span> ${businessData[key]}`;
+                summaryContent.appendChild(p);
+            }
+        };
+        nextBtn.addEventListener('click', () => {
+            if (currentCardIndex < totalCards - 1) {
+                if (validateCard()) {
+                    collectData();
+                    currentCardIndex = (currentCardIndex + 1) % totalCards;
+                    updateCarousel();
+                    if (currentCardIndex === totalCards - 1) {
+                        showSummary();
+                    }
+                }
+            }
+        });
+        prevBtn.addEventListener('click', () => {
+            if (currentCardIndex > 0) {
+                currentCardIndex = (currentCardIndex - 1 + totalCards) % totalCards;
+                updateCarousel();
+            }
+        });
+        clearDataBtn.addEventListener('click', () => {
+            Object.keys(businessData).forEach(key => delete businessData[key]);
+            ['business-name', 'business-niche', 'years-in-business', 'tracking-method', 'monthly-income', 'monthly-expense'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            summaryContent.innerHTML = '<p class="text-center">Data has been cleared.</p>';
+        });
+        finishBtn.addEventListener('click', () => {
+            console.log('Onboarding process finished! Data:', businessData);
+            summaryContent.style.display = 'none';
+            finishBtn.closest('div.flex').style.display = 'none';
+            inCardSuccessMessage.classList.remove('hidden');
+            setTimeout(() => {
+                 inCardSuccessMessage.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+            nextBtn.disabled = true;
+            prevBtn.disabled = true;
+            backToSignupBtn.style.display = 'none';
+        });
+        backToSignupBtn.addEventListener('click', () => {
+            onboardingContainer.style.display = 'none';
+            mainContainer.classList.remove('onboarding-mode');
+            mainContainer.classList.add('signup-mode');
+            signupForm.style.display = 'block';
+            loginForm.style.display = 'none';
+            welcomeTitle.textContent = 'CREATE ACCOUNT';
+            welcomeText.textContent = "Ready to start? Create your Spenza account to unlock powerful financial tools designed for your business. Let's build something great together.";
+            currentCardIndex = 0;
+            updateCarousel();
+        });
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            mainContainer.classList.remove('signup-mode');
+            mainContainer.classList.add('login-mode');
+            welcomeTitle.textContent = 'WELCOME BACK!';
+            welcomeText.textContent = 'Glad to see you again! Pick up where you left off and continue to make smart financial decisions for your business with Spenza.';
+        });
+        showSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+            mainContainer.classList.remove('login-mode');
+            mainContainer.classList.add('signup-mode');
+            welcomeTitle.textContent = 'CREATE ACCOUNT';
+            welcomeText.textContent = "Ready to start? Create your Spenza account to unlock powerful financial tools designed for your business. Let's build something great together.";
+        });
+        const transitionToOnboarding = () => {
+            mainContainer.classList.remove('signup-mode', 'login-mode');
+            mainContainer.classList.add('onboarding-mode');
+            onboardingContainer.style.display = 'flex';
+            updateCarousel();
+        };
+
+        // --- UPDATED Signup Form Submission ---
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            // Check if all required fields are filled
+            if (document.getElementById('signup-name').value && email && password) {
+                // Validate password strength
+                if (validatePassword(password)) {
+                    passwordError.style.display = 'none';
+                    // Store user credentials
+                    userDatabase[email] = password;
+                    console.log("User Registered:", userDatabase);
+                    signupMessage.textContent = 'Sign up successful! Please log in.';
+                    signupMessage.style.color = '#22d3ee';
+                    // Automatically switch to login panel after a short delay
+                    setTimeout(() => {
+                        showLoginLink.click();
+                        signupMessage.textContent = '';
+                    }, 2000);
+                } else {
+                    passwordError.style.display = 'block';
+                }
+            } else {
+                alert('Please fill out all fields.');
+            }
+        });
+
+        // --- UPDATED Login Form Submission ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            // Check against our user database
+            if (userDatabase[email] && userDatabase[email] === password) {
+                loginMessage.textContent = 'Login Successful!';
+                loginMessage.style.color = '#22d3ee'; // Cyan
+                // Wait a moment to show the success message, then transition
+                setTimeout(() => {
+                    transitionToOnboarding();
+                    loginMessage.textContent = ''; // Clear message after transition
+                }, 1000);
+            } else {
+                loginMessage.textContent = 'Invalid email or password.';
+                loginMessage.style.color = '#ef4444'; // Red
+            }
+        });
+
+        // Initial setup on page load
+        updateCarousel();
+    </script>
+</body>
+</html>

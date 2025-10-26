@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spenza Invoice Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jsPDF + AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-[#0d0f1a] flex items-center justify-center min-h-screen font-sans relative">
+  <div class="bg-[#111828] p-8 rounded-2xl w-[700px] border border-cyan-400 shadow-lg shadow-cyan-500/30"> 
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-cyan-400 flex items-center gap-2">
+        Spenza Invoice Builder
+      </h2>
+      <span class="text-sm text-gray-400 italic">Professional Edition</span>
+    </div>
+
+    <!-- Invoice Metadata -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <input id="invoiceNo" type="text" placeholder="Invoice No" 
+             class="p-3 rounded-lg bg-[#1a2238] text-white border border-gray-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400 outline-none">
+      <input id="invoiceDate" type="date"
+             class="p-3 rounded-lg bg-[#1a2238] text-white border border-gray-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400 outline-none">
+    </div>
+    
+    <!-- Client Info -->
+    <div class="flex gap-4 mb-6">
+      <input id="clientName" type="text" placeholder="Client Name" 
+             class="w-1/2 p-3 rounded-lg bg-[#1a2238] text-white border border-gray-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400 outline-none">
+      <input id="clientEmail" type="email" placeholder="Client Email" 
+             class="w-1/2 p-3 rounded-lg bg-[#1a2238] text-white border border-gray-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400 outline-none">
+    </div>
+    
+    <!-- Add Item -->
+    <button id="addItemBtn" class="px-5 py-2 mb-4 rounded-lg font-semibold bg-cyan-400 text-black hover:bg-cyan-300 transition shadow-md shadow-cyan-400/40">
+      + Add Item
+    </button>
+    
+    <!-- Table -->
+    <table id="invoiceTable" class="w-full border-collapse overflow-hidden rounded-lg border border-gray-700 shadow-md shadow-cyan-500/20">
+      <thead>
+        <tr class="bg-[#1f2937] text-cyan-400">
+          <th class="p-3 border border-gray-700">Item</th>
+          <th class="p-3 border border-gray-700">Quantity</th>
+          <th class="p-3 border border-gray-700">Price</th>
+          <th class="p-3 border border-gray-700">Total</th>
+          <th class="p-3 border border-gray-700">Action</th>
+        </tr>
+      </thead>
+      <tbody id="invoiceBody"></tbody>
+    </table>
+    
+    <!-- Total & Download -->
+    <div class="flex justify-between items-center mt-6">
+      <p id="totalAmount" class="text-lg font-bold text-green-400">Total: ₹0.00</p>
+      <button id="downloadBtn" class="px-6 py-2 rounded-lg font-semibold bg-green-400 text-black hover:bg-green-300 transition shadow-lg shadow-green-400/40 animate-pulse">
+        ⬇ Download PDF
+      </button>
+    </div>
+  </div>
+
+<!-- View Saved PDFs Button -->
+<a href="saved.html"
+  class="fixed bottom-6 right-40 px-4 py-2 rounded-lg bg-cyan-500 text-black font-semibold hover:bg-cyan-400 transition shadow-lg shadow-cyan-400/40">
+  📂 View Saved PDFs
+</a>
+
+<!-- Home Button -->
+<a href="2_LandingPg.html"
+  class="fixed bottom-6 right-6 px-4 py-2 rounded-lg bg-cyan-500 text-black font-semibold hover:bg-cyan-400 transition shadow-lg shadow-cyan-400/40">
+  🏠 Home
+</a>
+
+
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed bottom-6 left-6 bg-green-500 text-black px-4 py-2 rounded-lg shadow-lg">
+    ✅ PDF Saved Successfully
+  </div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+    const invoiceBody = document.getElementById("invoiceBody");
+    const totalAmount = document.getElementById("totalAmount");
+    const toast = document.getElementById("toast");
+    let total = 0;
+
+    // Auto-fill invoice date
+    document.getElementById("invoiceDate").value = new Date().toISOString().split("T")[0];
+
+    // IndexedDB init
+    let db;
+    const request = indexedDB.open("spenzaDB", 1);
+    request.onupgradeneeded = e => {
+      db = e.target.result;
+      db.createObjectStore("pdfs", { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = e => { db = e.target.result; };
+
+    // Add item row
+    document.getElementById("addItemBtn").addEventListener("click", () => {
+      const row = document.createElement("tr");
+      row.className = "bg-[#141b2e] text-white";
+      row.innerHTML = `
+        <td class="p-3 border border-gray-700"><input class="itemName bg-transparent w-full"></td>
+        <td class="p-3 border border-gray-700"><input type="number" class="itemQty bg-transparent w-full" value="1"></td>
+        <td class="p-3 border border-gray-700"><input type="number" class="itemPrice bg-transparent w-full" value="0"></td>
+        <td class="p-3 border border-gray-700 totalCell">0</td>
+        <td class="p-3 border border-gray-700"><button class="text-red-400 removeBtn">❌</button></td>
+      `;
+      invoiceBody.appendChild(row);
+
+      row.querySelectorAll(".itemQty, .itemPrice").forEach(input => {
+        input.addEventListener("input", () => updateRow(row));
+      });
+
+      row.querySelector(".removeBtn").addEventListener("click", () => {
+        row.remove();
+        updateTotal();
+      });
+    });
+
+    function updateRow(row) {
+      const qty = row.querySelector(".itemQty").value || 0;
+      const price = row.querySelector(".itemPrice").value || 0;
+      const totalCell = row.querySelector(".totalCell");
+      const rowTotal = qty * price;
+      totalCell.textContent = rowTotal;
+      updateTotal();
+    }
+
+    function updateTotal() {
+      total = [...document.querySelectorAll(".totalCell")]
+              .reduce((sum, cell) => sum + Number(cell.textContent), 0);
+      totalAmount.textContent = "Total: ₹" + total.toFixed(2);
+    }
+
+    function showToast() {
+      toast.classList.remove("hidden");
+      setTimeout(() => { toast.classList.add("hidden"); }, 2500);
+    }
+
+    // ✅ Download + Save PDF
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+      // Header
+      doc.setFontSize(20);
+      doc.setTextColor(0, 150, 200);
+      doc.text("Spenza Invoice", 300, 40, { align: "center" });
+
+      // Invoice Metadata
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Invoice No: " + (document.getElementById("invoiceNo").value || "-"), 400, 80);
+      doc.text("Date: " + (document.getElementById("invoiceDate").value || "-"), 400, 100);
+
+      // Client Info
+      doc.text("Client Details:", 40, 80);
+      doc.text("Name: " + (document.getElementById("clientName").value || "-"), 40, 100);
+      doc.text("Email: " + (document.getElementById("clientEmail").value || "-"), 40, 120);
+
+      // Table Data
+      const rows = [];
+      document.querySelectorAll("#invoiceBody tr").forEach(row => {
+        const item = row.querySelector(".itemName").value || "-";
+        const qty = row.querySelector(".itemQty").value || "0";
+        const price = row.querySelector(".itemPrice").value || "0";
+        const total = row.querySelector(".totalCell").textContent || "0";
+        // ✅ Use "Rs" instead of "₹"
+        rows.push([item, qty, "Rs " + price, "Rs " + total]);
+      });
+
+      doc.autoTable({
+        startY: 150,
+        head: [["Item", "Quantity", "Price", "Total"]],
+        body: rows,
+        theme: "striped",
+        styles: { halign: "center" },
+        headStyles: { fillColor: [0, 150, 200], textColor: 255 }
+      });
+
+      // Grand Total
+      let finalY = doc.lastAutoTable.finalY + 20;
+      doc.setFontSize(14);
+      doc.setTextColor(0, 128, 0);
+      // ✅ Use "Rs" instead of "₹"
+      doc.text("Grand Total: Rs " + total.toFixed(2), 520, finalY, { align: "right" });
+
+      // Footer
+      doc.setFontSize(10);
+      doc.setTextColor(120, 120, 120);
+      doc.text("Generated via Spenza Invoice Builder", 300, 820, { align: "center" });
+
+      // ✅ Convert to Blob
+      const pdfBlob = doc.output("blob");
+
+      // ✅ Download
+      doc.save("Invoice.pdf");
+
+      // ✅ Save in IndexedDB with clientName & date
+      const clientName = document.getElementById("clientName").value || "Unknown Client";
+      const tx = db.transaction("pdfs", "readwrite");
+      tx.objectStore("pdfs").add({
+        name: clientName,
+        blob: pdfBlob,
+        date: new Date().toLocaleDateString()
+      });
+      tx.oncomplete = () => showToast();
+    });
+  </script>
+</body>
+</html>

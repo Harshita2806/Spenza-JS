@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Management Dashboard (Vanilla JS)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS from SupplierPage.css for animations (same as original) */
+        @keyframes wordFade {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-wordFade {
+            animation: wordFade 0.6s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeInUp {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        /* Custom styles for select elements in dark mode */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-black text-white font-sans scroll-smooth">
+
+    <nav class="fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4 bg-black/80 backdrop-blur-md border-b border-gray-800 shadow-lg">
+        <div class="h-14 w-32 rounded flex items-center justify-center">
+            <img src="logoSpenza.png" alt="Logospensa Logo" class="h-full w-full object-contain">
+        </div>
+
+        <div class="flex items-center space-x-6">
+            <a href="#" class="px-6 py-2 rounded-full border-2 border-cyan-400 font-semibold text-cyan-400 hover:bg-cyan-400 hover:text-white transition duration-300">
+                Home
+            </a>
+        </div>
+    </nav>
+
+    <section id="home" class="flex flex-col md:flex-row items-center justify-between min-h-screen max-w-7xl mx-auto px-6 md:space-x-32 pt-32 pb-16">
+        <div class="md:w-1/2">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-cyan-400 mb-12 leading-tight">
+                <span class="block">
+                    <span class="inline-block opacity-0 animate-wordFade mr-3" style="animation-delay: 0s;">Streamline</span>
+                    <span class="inline-block opacity-0 animate-wordFade mr-3" style="animation-delay: 0.3s;">Your</span>
+                </span>
+                <span class="block mt-2">
+                    <span class="inline-block opacity-0 animate-wordFade mr-3" style="animation-delay: 0.6s;">Supply</span>
+                    <span class="inline-block opacity-0 animate-wordFade mr-3" style="animation-delay: 0.9s;">Network</span>
+                </span>
+            </h1>
+
+            <p class="text-gray-300 text-lg mb-16">
+                Connect, manage, and track your vendors and purchases in a professional, centralized dashboard. Modern tools for modern businesses.
+            </p>
+
+            <button id="scrollToFormBtn" class="bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-8 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform">
+                Start Managing
+            </button>
+        </div>
+
+        <div class="w-full md:w-1/2 flex justify-center mt-12 md:mt-0 animate-fadeInUp">
+            <div class="bg-gray-800 object-contain w-full max-h-[600px] h-[300px] md:h-[500px] rounded-lg flex items-center justify-center text-gray-400">
+                <img src="image.jpg" alt="Supply Network Dashboard Hero" class="h-full w-full object-cover rounded-lg">
+            </div>
+        </div>
+    </section>
+
+    <section id="supplier-management" class="relative max-w-7xl mx-auto bg-gray-900/80 rounded-3xl p-10 mt-12 mb-16 shadow-xl border border-gray-700 animate-fadeInUp">
+        <h2 class="text-4xl font-bold mb-6 text-center text-cyan-400 drop-shadow-[0_0_10px_cyan]">Supplier Management</h2>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/50 border border-gray-700 rounded-2xl p-6 hover:border-cyan-400 transition shadow-md shadow-cyan-300">
+                <h3 class="font-semibold text-xl mb-6">Add Vendor</h3>
+                <form id="addVendorForm">
+                    <input type="text" id="vendorName" placeholder="Vendor Name" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-vendorName" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <input type="text" id="vendorPhone" placeholder="Phone" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-vendorPhone" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <input type="text" id="vendorAddress" placeholder="Address" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-vendorAddress" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <label class="block text-gray-400 text-sm mb-1">Default GST Rate for this Vendor (%)</label>
+                    <input type="number" id="vendorGstRate" placeholder="GST Rate (%)" value="18" min="0" max="100" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-vendorGstRate" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-semibold py-3 rounded-lg hover:scale-105 transition-transform mt-3">Add Vendor</button>
+                </form>
+            </div>
+
+            <div class="bg-black/50 border border-gray-700 rounded-2xl p-6 hover:border-cyan-400 transition shadow-md shadow-cyan-300">
+                <h3 class="font-semibold text-xl mb-6">Add Purchase</h3>
+                <form id="addPurchaseForm">
+                    <label class="block text-gray-400 text-sm mb-1">Select Vendor</label>
+                    <select id="purchaseVendorId" class="w-full p-3 rounded bg-gray-800 mb-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
+                        <option value="">-- Select a Vendor --</option>
+                        </select>
+                    <p id="error-purchaseVendorId" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <input type="text" id="purchaseItem" placeholder="Item Name" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-purchaseItem" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <div class="flex space-x-3 mb-1">
+                        <input type="number" id="purchaseQuantity" placeholder="Qty" min="1" class="w-1/2 p-3 rounded bg-gray-800 text-white placeholder-gray-400" required>
+                        <select id="purchaseUnit" class="w-1/2 p-3 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                            <option value="pcs">pcs</option>
+                            <option value="kg">kg</option>
+                            <option value="L">L</option>
+                            <option value="g">g</option>
+                        </select>
+                    </div>
+                    <p id="error-purchaseQuantity" class="text-red-400 text-sm mb-3 hidden"></p>
+
+
+                    <input type="number" id="purchasePrice" placeholder="Price per unit (₹)" min="0" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-purchasePrice" class="text-red-400 text-sm mb-3"></p>
+
+                    <label class="block text-gray-400 text-sm mb-1">Purchase Date</label>
+                    <input type="date" id="purchaseDate" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <p id="error-purchaseDate" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-semibold py-3 rounded-lg hover:scale-105 transition-transform mt-3" disabled>Add Purchase</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="vendorsListContainer" class="mt-12">
+        </div>
+
+        <div id="overallSummaryContainer" class="mt-12 hidden bg-gray-900/80 p-6 rounded-xl border border-cyan-700 shadow-md">
+            <h3 class="text-3xl font-bold mb-4 text-cyan-400">Overall Spending Summary</h3>
+            
+            <div class="flex space-x-4 mb-6" id="filterButtons">
+                <button data-period="all" class="filter-btn px-4 py-2 rounded-full font-semibold bg-cyan-600 text-white transition">All Time</button>
+                <button data-period="week" class="filter-btn px-4 py-2 rounded-full font-semibold bg-gray-700 text-gray-300 hover:bg-cyan-500 hover:text-white transition">This Week</button>
+                <button data-period="month" class="filter-btn px-4 py-2 rounded-full font-semibold bg-gray-700 text-gray-300 hover:bg-cyan-500 hover:text-white transition">This Month</button>
+                <button data-period="year" class="filter-btn px-4 py-2 rounded-full font-semibold bg-gray-700 text-gray-300 hover:bg-cyan-500 hover:text-white transition">This Year</button>
+            </div>
+            
+            <p class="text-xl text-gray-300 mb-2">Total amount spent (incl. GST): <span class="font-semibold text-green-400" id="grandTotal">₹0.00</span></p>
+            <p class="text-xl text-gray-300">Total amount paid: <span class="font-semibold text-green-400" id="paidTotal">₹0.00</span></p>
+            <p class="text-xl text-gray-300">Total amount due: <span class="font-semibold text-red-400" id="dueTotal">₹0.00</span></p>
+        </div>
+
+        <div id="purchasesByVendorContainer" class="mt-12">
+        </div>
+    </section>
+
+    <script>
+        // --- Application State ---
+        let vendors = [];
+        let purchases = [];
+        let filterPeriod = "all"; // "all", "week", "month", "year"
+
+        // Set default date for purchase date input
+        document.getElementById('purchaseDate').value = new Date().toISOString().slice(0, 10);
+
+        // --- DOM Elements ---
+        const vendorForm = document.getElementById('addVendorForm');
+        const purchaseForm = document.getElementById('addPurchaseForm');
+        const vendorsListContainer = document.getElementById('vendorsListContainer');
+        const purchaseVendorSelect = document.getElementById('purchaseVendorId');
+        const purchaseFormSubmitBtn = purchaseForm.querySelector('button[type="submit"]');
+        const overallSummaryContainer = document.getElementById('overallSummaryContainer');
+        const grandTotalSpan = document.getElementById('grandTotal');
+        const paidTotalSpan = document.getElementById('paidTotal');
+        const dueTotalSpan = document.getElementById('dueTotal');
+        const purchasesByVendorContainer = document.getElementById('purchasesByVendorContainer');
+        const filterButtonsContainer = document.getElementById('filterButtons');
+        
+        // ADD SCROLL-TO-FORM LISTENER HERE
+        document.getElementById('scrollToFormBtn').addEventListener('click', () => {
+             document.getElementById('supplier-management').scrollIntoView({ behavior: 'smooth' });
+        });
+
+
+        // --- Helper Functions ---
+
+        /**
+         * Validates a form field and displays an error.
+         * @returns {boolean} True if valid, false otherwise.
+         */
+        function validateField(inputElement, errorMessage, validator = (val) => val.trim() !== '') {
+            const errorElement = document.getElementById('error-' + inputElement.id);
+            const value = inputElement.value;
+            const isValid = validator(value);
+
+            inputElement.classList.toggle('border-2', !isValid);
+            inputElement.classList.toggle('border-red-500', !isValid);
+            if (!isValid) {
+                errorElement.textContent = errorMessage;
+                errorElement.classList.remove('hidden');
+            } else {
+                errorElement.classList.add('hidden');
+            }
+            return isValid;
+        }
+
+        /**
+         * Filters purchases based on the current period.
+         * @returns {Array} The filtered purchases array.
+         */
+        function getFilteredPurchases() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+
+            return purchases.filter(p => {
+                const pDate = new Date(p.purchaseDate + 'T00:00:00'); // Treat as start of day
+                const pYear = pDate.getFullYear();
+                const pMonth = pDate.getMonth();
+
+                switch (filterPeriod) {
+                    case "week":
+                        const sevenDaysAgo = new Date(now);
+                        sevenDaysAgo.setDate(now.getDate() - 7);
+                        sevenDaysAgo.setHours(0, 0, 0, 0);
+                        return pDate >= sevenDaysAgo;
+                    case "month":
+                        return pYear === currentYear && pMonth === currentMonth;
+                    case "year":
+                        return pYear === currentYear;
+                    case "all":
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        /**
+         * Calculates total spending for display.
+         * @param {Array} filteredPurchases - The array of purchases to calculate for.
+         * @returns {object} Total calculations.
+         */
+        function calculateTotals(filteredPurchases) {
+            const overallGrandTotal = filteredPurchases.reduce((sum, p) => sum + p.total, 0);
+            const overallPaidTotal = filteredPurchases.filter(p => p.isPaid).reduce((sum, p) => sum + p.total, 0);
+            const overallDueTotal = overallGrandTotal - overallPaidTotal;
+
+            return { overallGrandTotal, overallPaidTotal, overallDueTotal };
+        }
+
+        /**
+         * Groups filtered purchases by vendor for detailed view.
+         * @param {Array} filteredPurchases - The purchases to group.
+         * @returns {object} Grouped and summarised purchase data.
+         */
+        function groupPurchasesByVendor(filteredPurchases) {
+            const grouped = {};
+            vendors.forEach(vendor => {
+                grouped[vendor.id] = {
+                    vendorName: vendor.name,
+                    gstRate: vendor.gstRate,
+                    items: [],
+                    totalSpending: 0,
+                    paidSpending: 0,
+                };
+            });
+
+            filteredPurchases.forEach(purchase => {
+                if (grouped[purchase.vendorId]) {
+                    grouped[purchase.vendorId].items.push(purchase);
+                    grouped[purchase.vendorId].totalSpending += purchase.total;
+                    if (purchase.isPaid) {
+                        grouped[purchase.vendorId].paidSpending += purchase.total;
+                    }
+                }
+            });
+
+            return grouped;
+        }
+
+        // --- Render Functions ---
+
+        /** Renders the vendor cards */
+        function renderVendors() {
+            vendorsListContainer.innerHTML = ''; // Clear previous content
+
+            if (vendors.length === 0) {
+                // vendorsListContainer.innerHTML = '<p class="text-gray-400 text-center">No vendors registered yet.</p>';
+                purchaseFormSubmitBtn.disabled = true;
+                return;
+            }
+
+            // Enable purchase form button if vendors exist
+            purchaseFormSubmitBtn.disabled = false;
+
+            const header = document.createElement('h3');
+            header.className = 'text-2xl font-semibold mb-4 text-cyan-400';
+            header.textContent = 'Registered Vendors';
+            vendorsListContainer.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'grid md:grid-cols-3 gap-6';
+
+            vendors.forEach(v => {
+                const vendorCard = document.createElement('div');
+                vendorCard.className = 'bg-gray-800/70 p-4 rounded-xl border border-gray-600 shadow-md hover:shadow-cyan-500 transition-all relative';
+                vendorCard.innerHTML = `
+                    <button data-vendor-id="${v.id}" class="delete-vendor-btn absolute top-2 right-2 text-red-500 hover:text-red-300 transition" title="Delete Vendor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <p class="font-bold text-lg text-cyan-200">${v.name}</p>
+                    <p class="text-gray-400">Phone: ${v.phone}</p>
+                    <p class="text-gray-400">Address: ${v.address}</p>
+                    <p class="text-gray-400">Default GST: ${v.gstRate}%</p>
+                `;
+                grid.appendChild(vendorCard);
+            });
+
+            vendorsListContainer.appendChild(grid);
+            addDeleteVendorListeners(); // Re-add listeners after rendering
+        }
+
+        /** Populates the vendor dropdown in the purchase form */
+        function populateVendorSelect() {
+            purchaseVendorSelect.innerHTML = '<option value="">-- Select a Vendor --</option>';
+            vendors.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v.id;
+                option.textContent = `${v.name} (GST: ${v.gstRate}%)`;
+                purchaseVendorSelect.appendChild(option);
+            });
+        }
+
+        /** Renders the overall spending summary */
+        function renderSummary() {
+            const filtered = getFilteredPurchases();
+            if (purchases.length === 0) {
+                overallSummaryContainer.classList.add('hidden');
+                return;
+            }
+
+            overallSummaryContainer.classList.remove('hidden');
+            const { overallGrandTotal, overallPaidTotal, overallDueTotal } = calculateTotals(filtered);
+
+            grandTotalSpan.textContent = `₹${overallGrandTotal.toFixed(2)}`;
+            paidTotalSpan.textContent = `₹${overallPaidTotal.toFixed(2)}`;
+            dueTotalSpan.textContent = `₹${overallDueTotal.toFixed(2)}`;
+
+            // Update filter button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-cyan-600', 'text-white');
+                btn.classList.add('bg-gray-700', 'text-gray-300', 'hover:bg-cyan-500', 'hover:text-white');
+                if (btn.dataset.period === filterPeriod) {
+                    btn.classList.add('bg-cyan-600', 'text-white');
+                    btn.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-cyan-500', 'hover:text-white');
+                }
+            });
+        }
+
+        /** Renders the detailed purchases grouped by vendor */
+        function renderDetailedPurchases() {
+            purchasesByVendorContainer.innerHTML = ''; // Clear previous content
+            const filtered = getFilteredPurchases();
+            const groupedData = groupPurchasesByVendor(filtered);
+
+            if (filtered.length === 0) {
+                if (purchases.length > 0) {
+                     purchasesByVendorContainer.innerHTML = `<h3 class="text-3xl font-bold mb-6 text-cyan-400">Detailed Purchases by Vendor (${filterPeriod === 'all' ? 'All Time' : filterPeriod === 'week' ? 'This Week' : filterPeriod === 'month' ? 'This Month' : 'This Year'})</h3>
+                     <p class="text-gray-400 p-6 bg-gray-800/70 rounded-xl">No purchases found for the selected period.</p>`;
+                }
+                return;
+            }
+
+            const header = document.createElement('h3');
+            header.className = 'text-3xl font-bold mb-6 text-cyan-400';
+            header.textContent = `Detailed Purchases by Vendor (${filterPeriod === 'all' ? 'All Time' : filterPeriod === 'week' ? 'This Week' : filterPeriod === 'month' ? 'This Month' : 'This Year'})`;
+            purchasesByVendorContainer.appendChild(header);
+
+            Object.values(groupedData).forEach(vendorData => {
+                if (vendorData.items.length > 0) {
+                    const vendorDiv = document.createElement('div');
+                    vendorDiv.className = 'bg-gray-800/70 p-6 rounded-xl border border-gray-600 shadow-md mb-8';
+
+                    let tableHTML = `
+                        <h4 class="text-2xl font-semibold mb-4 text-cyan-200">${vendorData.vendorName} (GST: ${vendorData.gstRate}%)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-700">
+                                <thead class="bg-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Item</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Qty</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Unit Price</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Subtotal</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">GST (${vendorData.gstRate}%)</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Paid</th>
+                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-gray-900 divide-y divide-gray-700">
+                    `;
+
+                    vendorData.items.forEach(p => {
+                        tableHTML += `
+                            <tr class="hover:bg-gray-800/50 transition duration-150">
+                                <td class="px-4 py-3 whitespace-nowrap">${p.purchaseDate}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">${p.item}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">${p.quantity} ${p.unit}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">₹${p.price.toFixed(2)}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">₹${p.subtotal.toFixed(2)}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">₹${p.gstAmount.toFixed(2)}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-cyan-300 font-semibold">₹${p.total.toFixed(2)}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <input type="checkbox" data-purchase-id="${p.id}" ${p.isPaid ? 'checked' : ''} class="toggle-paid-checkbox form-checkbox h-5 w-5 text-green-500 rounded border-gray-500 bg-gray-700 focus:ring-green-400">
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                    <button data-purchase-id="${p.id}" class="delete-purchase-btn text-red-600 hover:text-red-400 ml-2" title="Delete Purchase">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4 text-right text-lg font-semibold text-gray-300">
+                            Total amount of purchases from ${vendorData.vendorName}: <span class="text-green-400">₹${vendorData.totalSpending.toFixed(2)}</span> (Paid: <span class="text-green-400">₹${vendorData.paidSpending.toFixed(2)}</span>, Due: <span class="text-red-400">₹${(vendorData.totalSpending - vendorData.paidSpending).toFixed(2)}</span>)
+                        </div>
+                    `;
+                    vendorDiv.innerHTML = tableHTML;
+                    purchasesByVendorContainer.appendChild(vendorDiv);
+                }
+            });
+
+            addPurchaseActionListeners(); // Re-add listeners after rendering
+        }
+
+        /** Master render function to update all dynamic parts */
+        function renderApp() {
+            renderVendors();
+            populateVendorSelect();
+            renderSummary();
+            renderDetailedPurchases();
+        }
+
+        // --- Event Handlers ---
+
+        function handleAddVendor(e) {
+            e.preventDefault();
+
+            let formValid = true;
+            const nameInput = document.getElementById('vendorName');
+            const phoneInput = document.getElementById('vendorPhone');
+            const addressInput = document.getElementById('vendorAddress');
+            const gstRateInput = document.getElementById('vendorGstRate');
+
+            // Sequential validation
+            formValid &= validateField(nameInput, 'Vendor Name is required.');
+            formValid &= validateField(phoneInput, 'Phone is required.');
+            formValid &= validateField(addressInput, 'Address is required.');
+            formValid &= validateField(gstRateInput, 'GST Rate must be between 0 and 100.', (val) => val >= 0 && val <= 100 && val !== '');
+
+            if (!formValid) return;
+
+            const newVendor = {
+                id: Date.now().toString(),
+                name: nameInput.value,
+                phone: phoneInput.value,
+                address: addressInput.value,
+                gstRate: parseFloat(gstRateInput.value) || 0,
+            };
+
+            vendors.push(newVendor);
+            vendorForm.reset();
+            renderApp();
+        }
+
+        function handleAddPurchase(e) {
+            e.preventDefault();
+
+            let formValid = true;
+            const vendorIdInput = document.getElementById('purchaseVendorId');
+            const itemInput = document.getElementById('purchaseItem');
+            const quantityInput = document.getElementById('purchaseQuantity');
+            const unitInput = document.getElementById('purchaseUnit');
+            const priceInput = document.getElementById('purchasePrice');
+            const dateInput = document.getElementById('purchaseDate');
+
+            // Sequential validation
+            formValid &= validateField(vendorIdInput, 'Please select a vendor.', (val) => val !== '');
+            formValid &= validateField(itemInput, 'Item Name is required.');
+            formValid &= validateField(quantityInput, 'Quantity must be greater than 0.', (val) => parseFloat(val) > 0);
+            formValid &= validateField(priceInput, 'Price must be greater than 0.', (val) => parseFloat(val) > 0);
+            formValid &= validateField(dateInput, 'Purchase Date is required.');
+
+            if (!formValid) return;
+
+            const selectedVendor = vendors.find(v => v.id === vendorIdInput.value);
+            if (!selectedVendor) return alert("Selected vendor not found!");
+
+            const itemPrice = parseFloat(priceInput.value);
+            const itemQuantity = parseFloat(quantityInput.value);
+            const vendorGstRate = parseFloat(selectedVendor.gstRate) || 0;
+
+            const subtotal = itemPrice * itemQuantity;
+            const gstAmount = subtotal * (vendorGstRate / 100);
+            const total = subtotal + gstAmount;
+
+            const newPurchase = {
+                id: Date.now().toString(),
+                vendorId: vendorIdInput.value,
+                item: itemInput.value,
+                quantity: itemQuantity,
+                unit: unitInput.value,
+                price: itemPrice,
+                purchaseDate: dateInput.value,
+                subtotal: subtotal,
+                gstAmount: gstAmount,
+                total: total,
+                gstRate: vendorGstRate,
+                isPaid: false,
+            };
+
+            purchases.push(newPurchase);
+            purchaseForm.reset();
+            dateInput.value = new Date().toISOString().slice(0, 10); // Reset date to today
+            renderApp();
+        }
+
+        function handleDeleteVendor(vendorId) {
+            if (window.confirm("Are you sure you want to delete this vendor and all associated purchases?")) {
+                vendors = vendors.filter(v => v.id !== vendorId);
+                purchases = purchases.filter(p => p.vendorId !== vendorId);
+                renderApp();
+            }
+        }
+
+        function handleDeletePurchase(purchaseId) {
+            if (window.confirm("Are you sure you want to delete this purchase?")) {
+                purchases = purchases.filter(p => p.id !== purchaseId);
+                renderApp();
+            }
+        }
+
+        function handleTogglePaid(purchaseId) {
+            purchases = purchases.map(p =>
+                p.id === purchaseId ? { ...p, isPaid: !p.isPaid } : p
+            );
+            renderApp();
+        }
+
+        function handleFilterChange(period) {
+            filterPeriod = period;
+            renderSummary();
+            renderDetailedPurchases();
+        }
+
+        // --- Event Listener Attachment ---
+
+        function addDeleteVendorListeners() {
+            document.querySelectorAll('.delete-vendor-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleDeleteVendor(e.currentTarget.dataset.vendorId);
+                });
+            });
+        }
+
+        function addPurchaseActionListeners() {
+            // Delete Purchase
+            document.querySelectorAll('.delete-purchase-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleDeletePurchase(e.currentTarget.dataset.purchaseId);
+                });
+            });
+
+            // Toggle Paid Status
+            document.querySelectorAll('.toggle-paid-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    e.preventDefault();
+                    handleTogglePaid(e.currentTarget.dataset.purchaseId);
+                });
+            });
+        }
+
+        // --- Initialisation ---
+        vendorForm.addEventListener('submit', handleAddVendor);
+        purchaseForm.addEventListener('submit', handleAddPurchase);
+        filterButtonsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                handleFilterChange(e.target.dataset.period);
+            }
+        });
+
+
+        // Run initial render on load
+        renderApp();
+    </script>
+</body>
+</html>

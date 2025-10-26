@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Tracker & Report</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ApexCharts -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      background: linear-gradient(to bottom, #000000, #021b21, #000000);
+      color: white;
+    }
+
+    .apexcharts-legend-text {
+      color: white !important;
+    }
+
+    .apexcharts-datalabel-label,
+    .apexcharts-datalabel-value {
+      fill: white !important;
+    }
+
+    /* Generic modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: #021b21;
+      border: 2px solid #00FFFF;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 600px;
+      max-height: 85%;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen p-4 sm:p-6">
+  <div class="max-w-6xl mx-auto space-y-8">
+
+<!-- Header -->
+<div
+  class="p-6 rounded-lg shadow-lg bg-black/40 border border-cyan-400 flex flex-col md:flex-row items-center justify-between">
+
+  <!-- Left: Home Button -->
+  <a href="2_LandingPg.html"
+    class="bg-cyan-400 text-black px-5 py-2 rounded-lg text-lg font-semibold hover:bg-cyan-300 transition">
+    Home
+  </a>
+
+  <!-- Center: Title & Subtitle -->
+  <div class="text-center flex-1">
+    <h1 class="text-3xl sm:text-4xl font-bold mb-2 text-cyan-400">Stock Tracker</h1>
+    <p class="text-gray-300 text-sm sm:text-base">Track Empty & Filled Stock with Reports</p>
+  </div>
+
+  <!-- Right (optional space for future nav links or profile) -->
+  <div class="hidden md:flex space-x-6 text-white text-lg font-medium">
+    <!-- Example extra nav links if needed -->
+    <!-- <a href="#" class="hover:text-cyan-400">Reports</a>
+    <a href="#" class="hover:text-cyan-400">Settings</a> -->
+  </div>
+</div>
+
+    <!-- Chart -->
+    <div class="p-6 rounded-lg shadow-lg bg-black/40 border border-cyan-400">
+      <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-center text-white">Stock Status Breakdown</h2>
+      <div id="stockChart" class="w-full overflow-x-auto"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="p-6 rounded-lg shadow-lg bg-black/40 border border-cyan-400">
+      <div class="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <input type="text" id="item-name" placeholder="Enter item name"
+          class="border border-cyan-400 rounded p-2 flex-grow bg-black text-white text-sm sm:text-base" />
+        <select id="item-status"
+          class="border border-cyan-400 rounded p-2 bg-black text-white text-sm sm:text-base">
+          <option value="Filled">Filled</option>
+          <option value="Empty">Empty</option>
+        </select>
+        <button id="add-item-btn"
+          class="bg-cyan-400 text-black px-4 py-2 rounded hover:bg-cyan-300 text-sm sm:text-base">
+          Add Item
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        <button onclick="generateReport('day')"
+          class="bg-cyan-400 text-black px-3 sm:px-4 py-2 rounded hover:bg-cyan-300 text-sm sm:text-base">
+          Daily Report
+        </button>
+        <button onclick="generateReport('week')"
+          class="bg-cyan-400 text-black px-3 sm:px-4 py-2 rounded hover:bg-cyan-300 text-sm sm:text-base">
+          Weekly Report
+        </button>
+        <button onclick="generateReport('month')"
+          class="bg-cyan-400 text-black px-3 sm:px-4 py-2 rounded hover:bg-cyan-300 text-sm sm:text-base">
+          Monthly Report
+        </button>
+        <button onclick="generateReport('year')"
+          class="bg-cyan-400 text-black px-3 sm:px-4 py-2 rounded hover:bg-cyan-300 text-sm sm:text-base">
+          Yearly Report
+        </button>
+      </div>
+
+      <div id="items" class="space-y-4"></div>
+    </div>
+
+    <!-- Saved Reports Section -->
+    <div class="p-6 rounded-lg shadow-lg bg-black/40 border border-cyan-400">
+      <h2 class="text-xl sm:text-2xl font-bold text-cyan-400 mb-4">📂 Saved Reports</h2>
+      <div id="savedReports" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- Modal for entering Empty Item Details -->
+  <div id="emptyModal" class="modal">
+    <div class="modal-content">
+      <h2 class="text-lg sm:text-xl font-bold text-cyan-400 mb-3">Enter Stock Details</h2>
+      <input type="number" id="empty-qty" placeholder="Enter quantity (e.g. 10)"
+        class="w-full mb-2 border border-cyan-400 rounded p-2 bg-black text-white text-sm sm:text-base" />
+      <input type="text" id="empty-desc" placeholder="Enter description (e.g. 10 packets)"
+        class="w-full mb-2 border border-cyan-400 rounded p-2 bg-black text-white text-sm sm:text-base" />
+      <div class="flex justify-end gap-2">
+        <button onclick="closeEmptyModal()"
+          class="bg-gray-500 text-white px-3 sm:px-4 py-2 rounded text-sm sm:text-base">Cancel</button>
+        <button onclick="saveEmptyDetails()"
+          class="bg-cyan-400 text-black px-3 sm:px-4 py-2 rounded text-sm sm:text-base">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Report -->
+  <div id="reportModal" class="modal">
+    <div class="modal-content">
+      <h2 class="text-xl sm:text-2xl font-bold text-cyan-400 mb-4">Report</h2>
+      <div id="reportContent" class="text-white text-sm sm:text-base"></div>
+      <div class="flex flex-col sm:flex-row justify-between gap-2 mt-4">
+        <button onclick="closeModal()"
+          class="bg-gray-500 text-white px-3 sm:px-4 py-2 rounded text-sm sm:text-base">Close</button>
+        <button onclick="downloadPDF()"
+          class="bg-cyan-400 text-black px-3 sm:px-4 py-2 rounded text-sm sm:text-base">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS SCRIPT (same as before) -->
+  <script>
+    /* --- your existing JavaScript code remains unchanged --- */
+    let state = JSON.parse(localStorage.getItem("stockState") || "[]");
+    let savedReports = JSON.parse(localStorage.getItem("savedReports") || "[]");
+    let chart, currentReportText = "";
+    let tempItem = null; // hold item while filling empty modal
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("add-item-btn").addEventListener("click", addItem);
+      renderChart();
+      renderItems();
+      renderSavedReports();
+    });
+
+    function addItem() {
+      const name = document.getElementById("item-name").value.trim();
+      const status = document.getElementById("item-status").value;
+      if (!name) return;
+
+      if (status === "Empty") {
+        tempItem = { name, status, date: new Date().toISOString() };
+        openEmptyModal();
+      } else {
+        state.push({ name, status, date: new Date().toISOString() });
+        saveState();
+      }
+      document.getElementById("item-name").value = "";
+      renderItems();
+      updateChart();
+    }
+
+    function removeItem(index) {
+      state.splice(index, 1);
+      saveState();
+      renderItems();
+      updateChart();
+    }
+
+    function saveState() {
+      localStorage.setItem("stockState", JSON.stringify(state));
+    }
+
+    function renderItems() {
+      const container = document.getElementById("items");
+      container.innerHTML = "";
+      state.forEach((item, index) => {
+        let details = `${item.name} - <span class="text-cyan-400">${item.status}</span>`;
+        if (item.status === "Empty" && item.requiredStock) {
+          details += ` (Needs: ${item.requiredStock}, ${item.description})`;
+        }
+        const div = document.createElement("div");
+        div.className = "flex justify-between items-center border border-cyan-400 p-3 rounded bg-black/60";
+        div.innerHTML = `
+          <span>${details}</span>
+          <button class="text-red-400 font-bold">&times;</button>
+        `;
+        div.querySelector("button").addEventListener("click", () => removeItem(index));
+        container.appendChild(div);
+      });
+    }
+
+    function openEmptyModal() {
+      document.getElementById("emptyModal").style.display = "flex";
+    }
+    function closeEmptyModal() {
+      document.getElementById("emptyModal").style.display = "none";
+      tempItem = null;
+    }
+    function saveEmptyDetails() {
+      const qty = +document.getElementById("empty-qty").value;
+      const desc = document.getElementById("empty-desc").value.trim();
+      if (!qty || qty <= 0) return;
+      tempItem.requiredStock = qty;
+      tempItem.description = desc || qty + " units";
+      state.push(tempItem);
+      saveState();
+      closeEmptyModal();
+      renderItems();
+      updateChart();
+    }
+
+    function getReportData(period) {
+      const now = new Date();
+      return state.filter(item => {
+        const itemDate = new Date(item.date);
+        if (period === "day") return itemDate.toDateString() === now.toDateString();
+        if (period === "week") { let w = new Date(); w.setDate(now.getDate() - 7); return itemDate >= w; }
+        if (period === "month") { let m = new Date(); m.setMonth(now.getMonth() - 1); return itemDate >= m; }
+        if (period === "year") return itemDate.getFullYear() === now.getFullYear();
+      });
+    }
+
+    function generateReport(period) {
+      const reportData = getReportData(period);
+      const filled = reportData.filter(i => i.status === "Filled").length;
+      const emptyItems = reportData.filter(i => i.status === "Empty");
+      const totalNeeded = emptyItems.reduce((a, b) => a + (b.requiredStock || 0), 0);
+      const dateStr = new Date().toLocaleString();
+
+      let html = `<p><strong>Date:</strong> ${dateStr}</p>
+        <p><strong>Period:</strong> ${period.toUpperCase()}</p>
+        <p><strong>Filled:</strong> ${filled}</p>
+        <p><strong>Empty:</strong> ${emptyItems.length}</p>
+        <p><strong>Total Stock Needed:</strong> ${totalNeeded}</p>
+        <hr class="my-2 border-cyan-400" />
+        <p class="font-bold text-cyan-400 mb-2">Empty Items Detail:</p>`;
+
+      if (emptyItems.length === 0) html += `<p>No empty items.</p>`;
+      else emptyItems.forEach(it => html += `<p>- ${it.name}: Needs ${it.requiredStock} (${it.description})</p>`);
+
+      document.getElementById("reportContent").innerHTML = html;
+      currentReportText = html.replace(/<[^>]*>/g, "");
+
+      // save to history
+      savedReports.push({ text: currentReportText, date: dateStr });
+      localStorage.setItem("savedReports", JSON.stringify(savedReports));
+      renderSavedReports();
+
+      openModal();
+    }
+
+    function downloadPDF(text = currentReportText, date = new Date().toLocaleString()) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(12);
+      doc.text("Stock Report - " + date, 10, 10);
+      let y = 20;
+      text.split("\n").forEach(line => { doc.text(line, 10, y); y += 8; });
+      doc.save("Stock_Report.pdf");
+    }
+
+    function renderSavedReports() {
+      const container = document.getElementById("savedReports");
+      container.innerHTML = "";
+      savedReports.forEach((r, i) => {
+        const div = document.createElement("div");
+        div.className = "flex justify-between items-center border border-cyan-400 p-3 rounded bg-black/60";
+        div.innerHTML = `
+          <span>${r.date}</span>
+          <div class="space-x-2">
+            <button class="bg-cyan-400 text-black px-2 py-1 rounded">View</button>
+            <button class="bg-green-400 text-black px-2 py-1 rounded">Download</button>
+          </div>`;
+        div.querySelector("button:nth-child(1)").onclick = () => {
+          document.getElementById("reportContent").innerText = r.text;
+          openModal();
+        };
+        div.querySelector("button:nth-child(2)").onclick = () => downloadPDF(r.text, r.date);
+        container.appendChild(div);
+      });
+    }
+
+    function openModal() { document.getElementById("reportModal").style.display = "flex"; }
+    function closeModal() { document.getElementById("reportModal").style.display = "none"; }
+
+    function renderChart() {
+      chart = new ApexCharts(document.querySelector("#stockChart"), {
+        chart: { type: "donut", height: 350 },
+        labels: ["Filled", "Empty"],
+        colors: ["#00FFFF", "#FF007F"],
+        legend: { position: "bottom" },
+        series: [0, 0]
+      });
+      chart.render();
+      updateChart();
+    }
+    function updateChart() {
+      const filled = state.filter(i => i.status === "Filled").length;
+      const empty = state.filter(i => i.status === "Empty").length;
+      chart.updateSeries([filled, empty]);
+    }
+  </script>
+</body>
+</html>

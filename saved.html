@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Invoices</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0d0f1a] text-white min-h-screen p-6 font-sans">
+  <h2 class="text-3xl font-bold text-cyan-400 mb-8 flex items-center gap-2">
+    📂 Saved Invoices
+  </h2>
+
+  <div id="pdfList" class="space-y-4"></div>
+
+  <a href="invoice.html" 
+     class="fixed bottom-6 right-6 px-4 py-2 rounded-lg bg-green-400 text-black font-semibold 
+            hover:bg-green-300 transition shadow-lg shadow-green-400/40">
+    ⬅ Back to Builder
+  </a>
+
+  <script>
+    let db;
+    const request = indexedDB.open("spenzaDB", 1);
+    request.onsuccess = e => {
+      db = e.target.result;
+      loadPDFs();
+    };
+
+    function loadPDFs() {
+      const tx = db.transaction("pdfs", "readonly");
+      const store = tx.objectStore("pdfs");
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        const list = document.getElementById("pdfList");
+        list.innerHTML = "";
+
+        if (req.result.length === 0) {
+          list.innerHTML = "<p class='text-gray-400 italic'>No invoices saved yet.</p>";
+          return;
+        }
+
+        req.result.forEach(pdf => {
+          const url = URL.createObjectURL(pdf.blob);
+          const div = document.createElement("div");
+          div.className = "bg-[#1a2238] p-5 rounded-2xl shadow-md shadow-cyan-500/20 flex justify-between items-center hover:bg-[#222b45] transition";
+
+          div.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="text-xl">👤</span>
+              <div>
+                <span class="font-semibold">${pdf.name}</span>
+                ${pdf.date ? `<p class="text-sm text-gray-400">📅 ${pdf.date}</p>` : ""}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a href="${url}" download="${pdf.name}.pdf" 
+                 class="px-3 py-1 bg-cyan-400 text-black font-medium rounded-lg hover:bg-cyan-300 transition">⬇ Download</a>
+              <a href="${url}" target="_blank" 
+                 class="px-3 py-1 bg-green-400 text-black font-medium rounded-lg hover:bg-green-300 transition">👁 View</a>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+      };
+    }
+  </script>
+</body>
+</html>
