@@ -6,7 +6,7 @@
     <title>Supplier Management Dashboard (Vanilla JS)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CSS from SupplierPage.css for animations (same as original) */
+        /* CSS from SupplierPage.css for animations */
         @keyframes wordFade {
             0% { opacity: 0; transform: translateY(20px); }
             100% { opacity: 1; transform: translateY(0); }
@@ -21,11 +21,23 @@
         .animate-fadeInUp {
             animation: fadeInUp 0.8s ease-out forwards;
         }
-        /* Custom styles for select elements in dark mode */
+        /* Tailwind sr-only utility class for accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        /* Custom styles for select elements in dark mode (FIXED PREFIX ORDER) */
         select {
-            appearance: none;
-            -webkit-appearance: none;
             -moz-appearance: none;
+            -webkit-appearance: none;
+            appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
@@ -43,7 +55,7 @@
         </div>
 
         <div class="flex items-center space-x-6">
-            <a href="#" class="px-6 py-2 rounded-full border-2 border-cyan-400 font-semibold text-cyan-400 hover:bg-cyan-400 hover:text-white transition duration-300">
+            <a href="2_LandingPg.html" class="px-6 py-2 rounded-full border-2 border-cyan-400 font-semibold text-cyan-400 hover:bg-cyan-400 hover:text-white transition duration-300">
                 Home
             </a>
         </div>
@@ -85,16 +97,19 @@
             <div class="bg-black/50 border border-gray-700 rounded-2xl p-6 hover:border-cyan-400 transition shadow-md shadow-cyan-300">
                 <h3 class="font-semibold text-xl mb-6">Add Vendor</h3>
                 <form id="addVendorForm">
+                    <label for="vendorName" class="sr-only">Vendor Name</label>
                     <input type="text" id="vendorName" placeholder="Vendor Name" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-vendorName" class="text-red-400 text-sm mb-3 hidden"></p>
 
+                    <label for="vendorPhone" class="sr-only">Vendor Phone</label>
                     <input type="text" id="vendorPhone" placeholder="Phone" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-vendorPhone" class="text-red-400 text-sm mb-3 hidden"></p>
 
+                    <label for="vendorAddress" class="sr-only">Vendor Address</label>
                     <input type="text" id="vendorAddress" placeholder="Address" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-vendorAddress" class="text-red-400 text-sm mb-3 hidden"></p>
 
-                    <label class="block text-gray-400 text-sm mb-1">Default GST Rate for this Vendor (%)</label>
+                    <label for="vendorGstRate" class="block text-gray-400 text-sm mb-1">Default GST Rate for this Vendor (%)</label>
                     <input type="number" id="vendorGstRate" placeholder="GST Rate (%)" value="18" min="0" max="100" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-vendorGstRate" class="text-red-400 text-sm mb-3 hidden"></p>
 
@@ -105,18 +120,22 @@
             <div class="bg-black/50 border border-gray-700 rounded-2xl p-6 hover:border-cyan-400 transition shadow-md shadow-cyan-300">
                 <h3 class="font-semibold text-xl mb-6">Add Purchase</h3>
                 <form id="addPurchaseForm">
-                    <label class="block text-gray-400 text-sm mb-1">Select Vendor</label>
-                    <select id="purchaseVendorId" class="w-full p-3 rounded bg-gray-800 mb-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
+                    <label for="purchaseVendorId" class="block text-gray-400 text-sm mb-1">Select Vendor</label>
+                    <select id="purchaseVendorId" name="purchaseVendorId" class="w-full p-3 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
                         <option value="">-- Select a Vendor --</option>
                         </select>
                     <p id="error-purchaseVendorId" class="text-red-400 text-sm mb-3 hidden"></p>
 
+                    <label for="purchaseItem" class="sr-only">Item Name</label>
                     <input type="text" id="purchaseItem" placeholder="Item Name" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-purchaseItem" class="text-red-400 text-sm mb-3 hidden"></p>
 
-                    <div class="flex space-x-3 mb-1">
+                    <div class="flex space-x-3 ">
+                        <label for="purchaseQuantity" class="sr-only">Quantity</label>
                         <input type="number" id="purchaseQuantity" placeholder="Qty" min="1" class="w-1/2 p-3 rounded bg-gray-800 text-white placeholder-gray-400" required>
-                        <select id="purchaseUnit" class="w-1/2 p-3 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                        
+                        <label for="purchaseUnit" class="sr-only">Unit</label>
+                        <select id="purchaseUnit" name="purchaseUnit" class="w-1/2 p-3 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
                             <option value="pcs">pcs</option>
                             <option value="kg">kg</option>
                             <option value="L">L</option>
@@ -125,12 +144,12 @@
                     </div>
                     <p id="error-purchaseQuantity" class="text-red-400 text-sm mb-3 hidden"></p>
 
-
+                    <label for="purchasePrice" class="sr-only">Price per unit</label>
                     <input type="number" id="purchasePrice" placeholder="Price per unit (₹)" min="0" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-purchasePrice" class="text-red-400 text-sm mb-3"></p>
 
-                    <label class="block text-gray-400 text-sm mb-1">Purchase Date</label>
-                    <input type="date" id="purchaseDate" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
+                    <label for="purchaseDate" class="block text-gray-400 text-sm mb-1">Purchase Date</label>
+                    <input type="date" id="purchaseDate" name="purchaseDate" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-purchaseDate" class="text-red-400 text-sm mb-3 hidden"></p>
 
                     <button type="submit" class="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-semibold py-3 rounded-lg hover:scale-105 transition-transform mt-3" disabled>Add Purchase</button>
@@ -139,7 +158,7 @@
         </div>
 
         <div id="vendorsListContainer" class="mt-12">
-        </div>
+            </div>
 
         <div id="overallSummaryContainer" class="mt-12 hidden bg-gray-900/80 p-6 rounded-xl border border-cyan-700 shadow-md">
             <h3 class="text-3xl font-bold mb-4 text-cyan-400">Overall Spending Summary</h3>
@@ -157,7 +176,7 @@
         </div>
 
         <div id="purchasesByVendorContainer" class="mt-12">
-        </div>
+            </div>
     </section>
 
     <script>
