@@ -121,7 +121,7 @@
                 <h3 class="font-semibold text-xl mb-6">Add Purchase</h3>
                 <form id="addPurchaseForm">
                     <label for="purchaseVendorId" class="block text-gray-400 text-sm mb-1">Select Vendor</label>
-                    <select id="purchaseVendorId" name="purchaseVendorId" class="w-full p-3 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
+                    <select id="purchaseVendorId" name="purchaseVendorId" class="w-full p-3 rounded bg-gray-800 mb-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
                         <option value="">-- Select a Vendor --</option>
                         </select>
                     <p id="error-purchaseVendorId" class="text-red-400 text-sm mb-3 hidden"></p>
@@ -130,7 +130,7 @@
                     <input type="text" id="purchaseItem" placeholder="Item Name" class="w-full p-3 rounded bg-gray-800 mb-1 text-white placeholder-gray-400" required>
                     <p id="error-purchaseItem" class="text-red-400 text-sm mb-3 hidden"></p>
 
-                    <div class="flex space-x-3 ">
+                    <div class="flex space-x-3 mb-1">
                         <label for="purchaseQuantity" class="sr-only">Quantity</label>
                         <input type="number" id="purchaseQuantity" placeholder="Qty" min="1" class="w-1/2 p-3 rounded bg-gray-800 text-white placeholder-gray-400" required>
                         
