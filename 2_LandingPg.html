@@ -459,114 +459,149 @@
     </footer>
 
     <!-- Scripts -->
-    <script>
-        // Use DOMContentLoaded to ensure the page is fully loaded before running script
-        document.addEventListener('DOMContentLoaded', () => {
-            // This is the contact form logic, kept from the original code
-            const form = document.getElementById("contactForm");
-            const popup = document.getElementById("popup");
-            const popupMessage = document.getElementById("popupMessage");
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
 
-            // Function to show a custom popup message
-            function showPopup(message, color = "text-white") {
-                popupMessage.textContent = message;
-                popupMessage.className = `text-lg font-semibold ${color}`;
-                popup.classList.remove("hidden");
-                setTimeout(() => { popup.classList.add("hidden"); }, 2000);
+        /* -------------------- CONTACT FORM LOGIC (Local JSON Server REST API) -------------------- */
+        const form = document.getElementById("contactForm");
+        const popup = document.getElementById("popup");
+        const popupMessage = document.getElementById("popupMessage");
+
+        // Function to show popup message
+        function showPopup(message, color = "text-white") {
+            console.log("Popup:", message);
+            if (!popup || !popupMessage) {
+                alert(message); // fallback if popup missing
+                return;
+            }
+            popupMessage.textContent = message;
+            popupMessage.className = `text-lg font-semibold ${color}`;
+            popup.classList.remove("hidden");
+            setTimeout(() => popup.classList.add("hidden"), 2500);
+        }
+
+        if (!form) {
+            console.error("❌ Contact form not found!");
+            return;
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            console.log("✅ Form submitted");
+
+            const firstName = document.getElementById("firstName")?.value.trim();
+            const lastName = document.getElementById("lastName")?.value.trim();
+            const email = document.getElementById("email")?.value.trim();
+            const message = document.getElementById("message")?.value.trim();
+
+            if (!firstName || !lastName || !email || !message) {
+                showPopup("Please fill all fields!", "text-red-400");
+                return;
             }
 
-            // Event listener for the form submission
-            form.addEventListener("submit", function (e) {
-                e.preventDefault();
-                let firstName = document.getElementById("firstName").value.trim();
-                let lastName = document.getElementById("lastName").value.trim();
-                let email = document.getElementById("email").value.trim();
-                let message = document.getElementById("message").value.trim();
+            const formData = {
+                firstName,
+                lastName,
+                email,
+                message,
+                date: new Date().toLocaleString(),
+            };
 
-                if (!firstName || !lastName || !email || !message) {
-                    showPopup("Please fill all the boxes", "text-red-400");
-                } else {
-                    showPopup("Form submitted successfully!", "text-green-400");
-                    form.reset();
-                }
-            });
+            console.log("📤 Sending data:", formData);
 
-
-            const carousel = document.getElementById("carousel");
-            const wrapper = document.getElementById("carouselWrapper");
-            const dots = document.querySelectorAll(".dot");
-            const totalSlides = dots.length;
-            let index = 0;
-            let interval = setInterval(nextSlide, 4000);
-
-            // Re-calculate the slide width and translate based on the actual element's width
-            function updateSlide() {
-                // Use the wrapper's client width to get an accurate, responsive width for translation
-                const slideWidth = wrapper.clientWidth;
-                carousel.style.transform = `translateX(-${index * slideWidth}px)`;
-                dots.forEach((dot, i) => {
-                    dot.classList.toggle("bg-white", i === index);
-                    dot.classList.toggle("bg-white/50", i !== index);
+            try {
+                const response = await fetch("http://localhost:3000/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
                 });
-            }
 
-            function nextSlide() {
-                index = (index + 1) % totalSlides;
+                if (!response.ok) throw new Error("Failed to send data");
+
+                const data = await response.json();
+                console.log("📥 API Response:", data);
+
+                showPopup("Message sent successfully!", "text-green-400");
+                form.reset();
+            } catch (error) {
+                console.error("❌ Error:", error);
+                showPopup("Server error — please check if JSON Server is running.", "text-red-400");
+            }
+        });
+
+
+        /* -------------------- CAROUSEL LOGIC -------------------- */
+        const carousel = document.getElementById("carousel");
+        const wrapper = document.getElementById("carouselWrapper");
+        const dots = document.querySelectorAll(".dot");
+        const totalSlides = dots.length;
+        let index = 0;
+        let interval = setInterval(nextSlide, 4000);
+
+        function updateSlide() {
+            const slideWidth = wrapper.clientWidth;
+            carousel.style.transform = `translateX(-${index * slideWidth}px)`;
+            dots.forEach((dot, i) => {
+                dot.classList.toggle("bg-white", i === index);
+                dot.classList.toggle("bg-white/50", i !== index);
+            });
+        }
+
+        function nextSlide() {
+            index = (index + 1) % totalSlides;
+            updateSlide();
+        }
+
+        wrapper.addEventListener("click", () => {
+            nextSlide();
+            resetInterval();
+        });
+
+        dots.forEach((dot, i) => {
+            dot.addEventListener("click", (e) => {
+                e.stopPropagation();
+                index = i;
                 updateSlide();
-            }
-
-            // Event listeners
-            wrapper.addEventListener("click", () => {
-                nextSlide();
                 resetInterval();
             });
+        });
 
-            dots.forEach((dot, i) => {
-                dot.addEventListener("click", (e) => {
-                    e.stopPropagation(); // prevent wrapper click from also firing
-                    index = i;
-                    updateSlide();
-                    resetInterval();
-                });
-            });
+        function resetInterval() {
+            clearInterval(interval);
+            interval = setInterval(nextSlide, 4000);
+        }
 
-            function resetInterval() {
-                clearInterval(interval);
-                interval = setInterval(nextSlide, 4000);
-            }
+        window.addEventListener('resize', updateSlide);
+        updateSlide();
 
-            // Update on initial load and on window resize
-            window.addEventListener('resize', updateSlide);
-            updateSlide();
+        /* -------------------- MOBILE MENU -------------------- */
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const closeMenuButton = document.getElementById('close-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
 
-            // Mobile menu functionality
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const closeMenuButton = document.getElementById('close-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.remove('-translate-x-full');
+        });
 
-            mobileMenuButton.addEventListener('click', () => {
-                mobileMenu.classList.remove('-translate-x-full');
-            });
+        closeMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.add('-translate-x-full');
+        });
 
-            closeMenuButton.addEventListener('click', () => {
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
                 mobileMenu.classList.add('-translate-x-full');
             });
-
-            // Close mobile menu when a link is clicked
-            const mobileLinks = mobileMenu.querySelectorAll('a');
-            mobileLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    mobileMenu.classList.add('-translate-x-full');
-                });
-            });
         });
-    </script>
+    });
+</script>
 
-    <!-- AOS Animation Script -->
-    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-    <script>
-        AOS.init({ duration: 1000, once: true });
-    </script>
+<!-- AOS Animation Script -->
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init({ duration: 1000, once: true });
+</script>
+
 </body>
 
 </html>
